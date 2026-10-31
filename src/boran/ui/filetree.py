@@ -17,7 +17,7 @@ _PLACEHOLDER = "\0"
 class FileTree(tk.Frame):
     """Folder panel: browse a folder and double-click an image to open it in a new tab."""
 
-    def __init__(self, master, on_open: Callable[[Path], None]):
+    def __init__(self, master, on_open: Callable[[Path], object]):
         super().__init__(master, bg=theme.PANEL)
         self._on_open = on_open
         self.root_path: Path | None = None

@@ -68,7 +68,7 @@ class RibbonButton(tk.Frame):
     """Icon-over-label command button; with `var` it behaves as a toggle."""
 
     def __init__(
-        self, master, text: str, command: Callable[[], None], icon: str = "", *,
+        self, master, text: str, command: Callable[[], object], icon: str = "", *,
         var: tk.BooleanVar | None = None, tip: str | None = None, compact: bool = False, text_icon: bool = False,
         tip_side: str = "below",
     ):
@@ -173,7 +173,7 @@ class RibbonGroup(tk.Frame):
         if not compact:
             tk.Label(self, text=title, font=theme.RIBBON_FONT, fg=theme.MUTED, bg=theme.PANEL).pack(side="bottom", pady=(2, 3))
 
-    def button(self, text: str, command: Callable[[], None], icon: str = "", **kw) -> RibbonButton:
+    def button(self, text: str, command: Callable[[], object], icon: str = "", **kw) -> RibbonButton:
         b = RibbonButton(self._body, text, command, icon, compact=self._compact, **kw)
         b.pack(side="left", padx=1)
         return b

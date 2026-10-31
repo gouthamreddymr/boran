@@ -9,6 +9,7 @@ import tkinter as tk
 from dataclasses import replace
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
+from typing import TYPE_CHECKING, Any
 
 from PIL import Image
 
@@ -33,13 +34,16 @@ from boran.ui.tabbar import TabBar
 from boran.ui.title_dialog import ask_title_style
 from boran.ui.viewer import ImageViewer
 
-try:
-    from tkinterdnd2 import DND_FILES, TkinterDnD
-
-    _TkBase = TkinterDnD.Tk
-except ImportError:  # drag and drop is optional
-    DND_FILES = None
+DND_FILES: str | None = None
+if TYPE_CHECKING:
     _TkBase = tk.Tk
+else:
+    try:
+        from tkinterdnd2 import DND_FILES, TkinterDnD
+
+        _TkBase = TkinterDnD.Tk
+    except ImportError:  # drag and drop is optional
+        _TkBase = tk.Tk
 
 _DUPLICATE_IOU = 0.3
 _TIP_INTERVAL_MS = 5000
@@ -781,10 +785,11 @@ class App(_TkBase):
     def _enable_drop(self) -> None:
         if DND_FILES is None:
             return
-        for widget in (
+        targets: list[Any] = [  # the drop methods only exist when tkinterdnd2 is installed
             self, self._top, self._tabs, self._view, self._tree.tree,
             self._status_bar, self._status_label, self._tip_text,
-        ):
+        ]
+        for widget in targets:
             widget.drop_target_register(DND_FILES)
             widget.dnd_bind("<<Drop>>", self._on_drop)
 
