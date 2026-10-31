@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "boran"
+version = "0.1.0"
+description = "Click faces in a photo to name the people."
+requires-python = ">=3.10"
+dependencies = [
+    "Pillow>=10.1",
+    "numpy>=1.24",
+    "opencv-python-headless>=4.8,<5",
+    "pillow-heif>=1.1",
+    "tkinterdnd2>=0.4",
+]
+
+[project.optional-dependencies]
+jxl = ["pillow-jxl-plugin"]
+raw = ["rawpy"]
+
+[project.gui-scripts]
+boran = "boran.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+boran = ["models/*.onnx", "fonts/*.ttf", "fonts/OFL.txt"]
