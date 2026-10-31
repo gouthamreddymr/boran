@@ -4,9 +4,14 @@ import tkinter as tk
 from tkinter import font as tkfont
 from typing import Callable
 
-from boran.ui import theme
+from boran.ui import system, theme
 
 _icons_ok: bool | None = None
+
+# Plain Unicode stand-ins for the Segoe icons, so the narrow side rails stay icon-only where that font is missing.
+_FALLBACK_ICONS = {
+    "\uE8B7": "\u25a4", "\uE70F": "\u270e", "\uE710": "+", "\uE9E9": "\u25d0", "\uE790": "\u25c8",
+}
 
 
 def icons_available(root: tk.Misc) -> bool:
@@ -19,7 +24,7 @@ def icons_available(root: tk.Misc) -> bool:
 
 class Tooltip:
     def __init__(self, widget: tk.Widget, text: str, delay_ms: int = 500, side: str = "below"):
-        self._widget, self._text, self._delay, self._side = widget, text, delay_ms, side
+        self._widget, self._text, self._delay, self._side = widget, system.keys(text), delay_ms, side
         self._job: str | None = None
         self._tip: tk.Toplevel | None = None
         for w in (widget, *widget.winfo_children()):
@@ -73,6 +78,8 @@ class RibbonButton(tk.Frame):
         self._labels: list[tk.Label] = []
 
         show_icon = bool(icon) and (text_icon or icons_available(self))
+        if not show_icon and compact and tip_side != "below" and icon in _FALLBACK_ICONS:  # a side rail is too narrow for text
+            icon, text_icon, show_icon = _FALLBACK_ICONS[icon], True, True
         pad = 6 if compact else 10
         if show_icon:
             font = theme.TOOLBAR_FONT_BOLD if text_icon else (theme.ICON_FAMILY, 13 if compact else 16)

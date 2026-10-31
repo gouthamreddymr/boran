@@ -18,7 +18,7 @@ from boran.document import Document
 from boran.edits import Edits, apply as apply_edits
 from boran.models import FaceBox, iou
 from boran.title_style import load_title_style, save_title_style
-from boran.ui import appicon, fonts, frameless, theme
+from boran.ui import appicon, fonts, frameless, system, theme
 from boran.ui.about_dialog import show_about
 from boran.ui.chip import Chip
 from boran.ui.dock import RightDock
@@ -75,6 +75,8 @@ def _key(path: Path) -> str:
 class App(_TkBase):
     def __init__(self, initial: Path | None = None):
         super().__init__()
+        if system.IS_MAC:
+            self.tk.call("tk", "scaling", 96 / 72)  # Tk on macOS sizes points at 72 dpi; match the Windows look
         fonts.install(self)
         theme.apply(self)
         appicon.install(self)
@@ -112,6 +114,8 @@ class App(_TkBase):
         frameless.strip_caption(self)
         self._enable_drop()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
+        if system.IS_MAC:
+            self.createcommand("::tk::mac::Quit", self._on_close)  # Cmd+Q and the app menu's Quit
         threading.Thread(target=self._prewarm_detector, daemon=True).start()
         if initial is not None:
             self.after_idle(lambda: self.open_path(initial))
@@ -128,14 +132,16 @@ class App(_TkBase):
         menubar = MenuBar(top)
         menubar.pack(side="top", fill="x")
         self._menubar = menubar
-        menubar.add_window_controls(self.iconify, self._toggle_maximize, self._on_close)
+        if frameless.available():  # elsewhere the native title bar already has these
+            menubar.add_window_controls(self.iconify, self._toggle_maximize, self._on_close)
         info = tk.Label(menubar, textvariable=self._info, font=theme.TOOLBAR_FONT_BOLD, fg=theme.FG, bg=theme.BG)
         info.pack(side="right", padx=12)
         self._build_menus(menubar)
         title = tk.Label(menubar, textvariable=self._title_var, font=theme.TOOLBAR_FONT, fg=theme.MUTED, bg=theme.BG)
         title.pack(side="left", fill="both", expand=True)
-        for handle in (menubar, title, info):
-            handle.bind("<ButtonPress-1>", self._on_title_press)
+        if frameless.available():
+            for handle in (menubar, title, info):
+                handle.bind("<ButtonPress-1>", self._on_title_press)
         self.bind("<Configure>", self._on_configure, add="+")
         ribbon = Ribbon(top, compact=True)
         ribbon.pack(side="top", fill="x")
@@ -148,7 +154,7 @@ class App(_TkBase):
         footer_font = (fonts.family(), 9)
         self._tip_text = ttk.Label(bar, style="Status.TLabel", font=footer_font)
         self._tip_text.pack(side="right", padx=(0, _FOOTER_PAD_RIGHT))
-        self._tip_keys = Chip(bar, ("Segoe UI", 8), fill=theme.BUTTON, fg=theme.FG, bg=theme.PANEL, radius=5)
+        self._tip_keys = Chip(bar, (theme.SYSTEM_FONT, 8), fill=theme.BUTTON, fg=theme.FG, bg=theme.PANEL, radius=5)
         self._status_label = ttk.Label(
             bar, textvariable=self._status, anchor="w", style="Status.TLabel", font=footer_font
         )
@@ -216,17 +222,18 @@ class App(_TkBase):
         self._progress_detail.pack(fill="x")
         self._progress_panel = panel
 
+        mod = system.MOD
         binds = {
-            "<Control-o>": self._open_dialog,
-            "<Control-Shift-O>": self._open_folder,
-            "<Control-s>": self._save,
-            "<Control-Shift-S>": lambda: self._save(save_as=True),
-            "<Control-w>": self._close_active,
-            "<Control-d>": lambda: self._flip(self._add_mode, self._toggle_add),
-            "<Control-e>": lambda: self._flip(self._edit, self._toggle_edit),
-            "<Control-r>": self._redetect,
-            "<Control-b>": lambda: self._flip(self._tree_var, self._apply_tree),
-            "<Control-j>": lambda: self._flip(self._dock_var, self._apply_dock),
+            f"<{mod}-o>": self._open_dialog,
+            f"<{mod}-Shift-O>": self._open_folder,
+            f"<{mod}-s>": self._save,
+            f"<{mod}-Shift-S>": lambda: self._save(save_as=True),
+            f"<{mod}-w>": self._close_active,
+            f"<{mod}-d>": lambda: self._flip(self._add_mode, self._toggle_add),
+            f"<{mod}-e>": lambda: self._flip(self._edit, self._toggle_edit),
+            f"<{mod}-r>": self._redetect,
+            f"<{mod}-b>": lambda: self._flip(self._tree_var, self._apply_tree),
+            f"<{mod}-j>": lambda: self._flip(self._dock_var, self._apply_dock),
             "t": lambda: self._flip(self._title_mode, self._apply_title_mode),
             "<Control-Tab>": lambda: self._cycle_tab(1),
             "<Control-Shift-Tab>": lambda: self._cycle_tab(-1),
@@ -249,6 +256,8 @@ class App(_TkBase):
         self._edit_buttons = (self._btn_add, self._btn_names, self._btn_detect)
 
     def _add(self, menu: DarkMenu, kind: str, gate: str | None = None, **options) -> None:
+        if "accelerator" in options:
+            options["accelerator"] = system.keys(options["accelerator"])
         getattr(menu, f"add_{kind}")(**options)
         if gate:
             self._gated.append((menu, menu.index("end"), gate))
@@ -293,7 +302,7 @@ class App(_TkBase):
         add(view, "command", "doc", label="Previous tab", accelerator="Ctrl+Shift+Tab", command=lambda: self._cycle_tab(-1))
 
         helpm = bar.add_menu("Help")
-        add(helpm, "command", label="Keyboard shortcuts...", command=lambda: messagebox.showinfo("Keyboard shortcuts", _SHORTCUTS, parent=self))
+        add(helpm, "command", label="Keyboard shortcuts...", command=lambda: messagebox.showinfo("Keyboard shortcuts", system.keys(_SHORTCUTS), parent=self))
         add(helpm, "command", label="About Boran", command=lambda: show_about(self))
 
     def _build_ribbon(self, ribbon: Ribbon) -> None:
@@ -485,13 +494,15 @@ class App(_TkBase):
         failed = f"  Face detection failed: {doc.detect_error}" if doc.detect_error else ""
         count = len(doc.faces)
         self._status.set(
-            f"{doc.path.name}: {count} face{'' if count == 1 else 's'}, {named} named{busy}. {hint}{unsaved}{failed}"
+            system.keys(
+                f"{doc.path.name}: {count} face{'' if count == 1 else 's'}, {named} named{busy}. {hint}{unsaved}{failed}"
+            )
         )
 
     # --- tips -------------------------------------------------------------
     def _notify(self, text: str, kind: str = "info") -> None:
         """Show a short message for five seconds; at most three show at once and the rest wait their turn."""
-        self._snacks.show(text, kind)
+        self._snacks.show(system.keys(text), kind)
 
     def _tip_context(self) -> tips.Context:
         doc = self._doc
@@ -513,9 +524,9 @@ class App(_TkBase):
         )
 
     def _show_tip(self, tip: tips.Tip | None) -> None:
-        self._tip_text.configure(text=tip.text if tip else "")
+        self._tip_text.configure(text=system.keys(tip.text) if tip else "")
         if tip is not None and tip.keys:
-            self._tip_keys.set_text(tip.keys)
+            self._tip_keys.set_text(system.keys(tip.keys))
             self._tip_keys.pack(side="right", padx=(0, 6), before=self._status_label)
         else:
             self._tip_keys.pack_forget()
@@ -873,7 +884,7 @@ class App(_TkBase):
                         "Face detection failed",
                         f"{error}\n\nYou can still add faces by hand with Add face.\n"
                         "If OpenCV is missing, start the app with the project's virtual environment:\n"
-                        ".venv\\Scripts\\python.exe -m boran",
+                        + (".venv\\Scripts\\python.exe -m boran" if system.IS_WIN else ".venv/bin/python -m boran"),
                         parent=self,
                     )
                 continue

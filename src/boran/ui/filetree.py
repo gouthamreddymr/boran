@@ -24,7 +24,7 @@ class FileTree(tk.Frame):
 
         header = tk.Frame(self, bg=theme.PANEL)
         header.pack(side="top", fill="x")
-        self._title = tk.Label(header, text="FOLDER", font=("Segoe UI", 8, "bold"), fg=theme.MUTED, bg=theme.PANEL, anchor="w")
+        self._title = tk.Label(header, text="FOLDER", font=(theme.SYSTEM_FONT, 8, "bold"), fg=theme.MUTED, bg=theme.PANEL, anchor="w")
         self._title.pack(side="left", padx=10)
         RibbonButton(header, "Up", self.go_up, "\uE74A", compact=True, tip="Parent folder").pack(side="right")
         RibbonButton(header, "Open", self.choose_folder, "\uE838", compact=True, tip="Open folder...").pack(side="right")

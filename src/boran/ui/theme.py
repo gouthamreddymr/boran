@@ -4,6 +4,8 @@ import sys
 import tkinter as tk
 from tkinter import ttk
 
+from boran.ui import system
+
 BG = "#1e1e1e"
 PANEL = "#252526"
 CANVAS = "#171717"
@@ -25,12 +27,13 @@ WARNING = "#d29922"
 ERROR = "#f85149"
 
 # The top bars (menu, ribbon, tabs) use the system font; everything else uses the app font.
-TOOLBAR_FONT = ("Segoe UI", 9)
-MENU_FONT = ("Segoe UI", 10)
-TOOLBAR_FONT_BOLD = ("Segoe UI", 11, "bold")
-RIBBON_FONT = ("Segoe UI", 8)
+SYSTEM_FONT = "Segoe UI" if system.IS_WIN else ("Helvetica Neue" if system.IS_MAC else "DejaVu Sans")
+TOOLBAR_FONT = (SYSTEM_FONT, 9)
+MENU_FONT = (SYSTEM_FONT, 10)
+TOOLBAR_FONT_BOLD = (SYSTEM_FONT, 11, "bold")
+RIBBON_FONT = (SYSTEM_FONT, 8)
 ICON_FAMILY = "Segoe MDL2 Assets"
-DIALOG_FONT = ("Segoe UI", 10)
+DIALOG_FONT = (SYSTEM_FONT, 10)
 
 _DWMWA_USE_IMMERSIVE_DARK_MODE = (20, 19)  # 19 on older Windows 10 builds
 

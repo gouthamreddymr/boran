@@ -3,7 +3,7 @@ from __future__ import annotations
 import tkinter as tk
 from typing import Callable
 
-from boran.ui import theme
+from boran.ui import system, theme
 
 _MAX_TITLE = 26
 
@@ -24,12 +24,12 @@ class _Tab:
         self.row = row
         self.label = tk.Label(row, text=_shorten(title), font=theme.TOOLBAR_FONT, fg=theme.MUTED, bg=theme.BG, padx=10, pady=6)
         self.label.pack(side="left")
-        self.close = tk.Label(row, text="\u2715", font=("Segoe UI", 8), fg=theme.MUTED, bg=theme.BG, padx=6, pady=6, cursor="hand2")
+        self.close = tk.Label(row, text="\u2715", font=(theme.SYSTEM_FONT, 8), fg=theme.MUTED, bg=theme.BG, padx=6, pady=6, cursor="hand2")
         self.close.pack(side="left", padx=(0, 4))
 
         for w in (self.frame, self.accent, row, self.label):
             w.bind("<ButtonPress-1>", lambda _e: bar.on_select(uid))
-            w.bind("<ButtonPress-2>", lambda _e: bar.on_close(uid))
+            w.bind(f"<ButtonPress-{system.MIDDLE_BUTTON}>", lambda _e: bar.on_close(uid))
             w.bind("<Enter>", lambda _e: self.paint(hover=True))
             w.bind("<Leave>", lambda _e: self.paint(hover=False))
         self.close.bind("<ButtonPress-1>", lambda _e: bar.on_close(uid))

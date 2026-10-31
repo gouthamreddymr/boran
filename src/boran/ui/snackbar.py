@@ -36,7 +36,7 @@ class _Snack:
             self.frame, text=text, fg=theme.FG, bg=theme.SNACK_BG, font=theme.MENU_FONT, justify="left", wraplength=320,
         )
         label.pack(side="left", pady=10)
-        close = tk.Label(self.frame, text="\u2715", fg=theme.MUTED, bg=theme.SNACK_BG, font=("Segoe UI", 9), padx=10, cursor="hand2")
+        close = tk.Label(self.frame, text="\u2715", fg=theme.MUTED, bg=theme.SNACK_BG, font=(theme.SYSTEM_FONT, 9), padx=10, cursor="hand2")
         close.pack(side="left", fill="y")
         close.bind("<ButtonRelease-1>", lambda _e: host.dismiss(self))
         close.bind("<Enter>", lambda _e: close.configure(fg=theme.FG))

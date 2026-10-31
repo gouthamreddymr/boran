@@ -10,7 +10,7 @@ from PIL import Image, ImageTk
 
 from boran.models import FaceBox, face_at
 from boran.title_style import TitleStyle
-from boran.ui import fonts, theme
+from boran.ui import fonts, system, theme
 from boran.ui.title_render import EXIT_SECONDS, draw_title, duration
 
 _NAMED = "#2ecc71"
@@ -81,7 +81,9 @@ class ImageViewer(tk.Canvas):
         self.bind("<ButtonPress-1>", self._on_press)
         self.bind("<B1-Motion>", self._on_motion)
         self.bind("<ButtonRelease-1>", self._on_release)
-        self.bind("<ButtonRelease-3>", self._on_right_click)
+        self.bind(f"<ButtonRelease-{system.RIGHT_BUTTON}>", self._on_right_click)
+        if system.IS_MAC:
+            self.bind("<Control-ButtonRelease-1>", self._on_right_click)  # Ctrl+click is the Mac right-click
         self.bind("<MouseWheel>", self._on_wheel)
         self.bind("<Motion>", self._on_hover)
         self.bind("<Leave>", self._on_leave)
@@ -224,7 +226,7 @@ class ImageViewer(tk.Canvas):
             self._hide_title(immediate=True)
             self.create_text(
                 cw / 2, ch / 2, fill="#aaaaaa", font=(fonts.family(), 10),
-                text="Drag and drop an image here\nor press Ctrl+O / click Open", justify="center",
+                text=system.keys("Drag and drop an image here\nor press Ctrl+O / click Open"), justify="center",
             )
             return
         s = self._scale
@@ -455,7 +457,7 @@ class ImageViewer(tk.Canvas):
         if self._img is None or event.delta == 0:
             return
         self._mouse = (event.x, event.y)
-        self.zoom_to(self._scale * 1.15 ** (event.delta / 120), (event.x, event.y))
+        self.zoom_to(self._scale * 1.15 ** system.wheel_notches(event), (event.x, event.y))
 
     def _on_press(self, event) -> None:
         if self._over_title((event.x, event.y)):
