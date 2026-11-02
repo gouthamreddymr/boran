@@ -108,6 +108,7 @@ def start_move(window: tk.Misc) -> None:
     try:
         user32 = ctypes.windll.user32
         user32.ReleaseCapture()
-        user32.SendMessageW(_hwnd(window), _WM_NCLBUTTONDOWN, _HTCAPTION, 0)
+        # PostMessage, not SendMessage: the modal move loop must run from Tk's mainloop, not inside this Python callback
+        user32.PostMessageW(_hwnd(window), _WM_NCLBUTTONDOWN, _HTCAPTION, 0)
     except (AttributeError, OSError):
         pass
